@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Candidate Ranking</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { min-height: 100vh; background: #080e17; font-family: sans-serif; padding: 20px 16px; color: #c8d8e8; }
+  .eyebrow { font-size: 10px; letter-spacing: 0.15em; color: #e07b39; text-transform: uppercase; font-family: monospace; margin-bottom: 10px; }
+  .mode-tabs { display: flex; gap: 12px; margin-bottom: 24px; }
+  .mode-tab { padding: 8px 18px; border-radius: 6px; font-size: 13px; font-weight: 600; font-family: monospace; cursor: pointer; border: 1px solid #1a2b3c; background: #0d1825; color: #4a6070; letter-spacing: 0.05em; transition: all 0.15s; }
+  .mode-tab.active { background: #e07b39; border-color: #e07b39; color: #fff; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
+  th { font-size: 11px; letter-spacing: 0.1em; color: #4a6070; text-transform: uppercase; font-family: monospace; padding: 8px 6px; text-align: center; border-bottom: 1px solid #1a2b3c; }
+  th:first-child { text-align: left; }
+  td { padding: 6px; text-align: center; border-bottom: 1px solid #111c2a; }
+  td:first-child { text-align: left; font-family: monospace; font-size: 14px; font-weight: 600; color: #c8d8e8; }
+  input[type="number"] { width: 64px; padding: 8px; background: #111c2a; border: 1px solid #1e2f42; border-radius: 4px; color: #c8d8e8; font-size: 18px; font-family: monospace; font-weight: 500; outline: none; text-align: center; transition: all 0.15s; -moz-appearance: textfield; }
+  input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  input[type="number"]:focus { border-color: #e07b39; color: #e07b39; background: #1a2535; }
+  .avg-cell { font-family: monospace; font-size: 16px; font-weight: 600; color: #8a9bb0; }
+  .results { background: #0d1825; border: 1px solid #1a2b3c; border-radius: 8px; padding: 16px; }
+  .results-title { font-size: 11px; letter-spacing: 0.1em; color: #4a6070; text-transform: uppercase; font-family: monospace; margin-bottom: 12px; }
+  .rank-row { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 6px; margin-bottom: 6px; }
+  .rank-badge { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: monospace; font-size: 14px; font-weight: 700; }
+  .rank-name { flex: 1; font-family: monospace; font-size: 15px; font-weight: 600; }
+  .rank-detail { font-family: monospace; font-size: 12px; }
+  .tier-pareto { background: rgba(224,123,57,0.08); }
+  .tier-pareto .rank-badge { background: #e07b39; color: #fff; }
+  .tier-pareto .rank-name { color: #e07b39; }
+  .tier-pareto .rank-detail { color: #e07b39; }
+  .tier-2 { background: rgba(138,155,176,0.06); }
+  .tier-2 .rank-badge { background: #2a3d52; color: #8a9bb0; }
+  .tier-2 .rank-name { color: #8a9bb0; }
+  .tier-2 .rank-detail { color: #4a6070; }
+  .tier-3 { background: rgba(74,96,112,0.06); }
+  .tier-3 .rank-badge { background: #1a2b3c; color: #4a6070; }
+  .tier-3 .rank-name { color: #4a6070; }
+  .tier-3 .rank-detail { color: #3a5060; }
+  .note { margin-top: 16px; padding: 12px 14px; background: #080e17; border-radius: 4px; font-size: 12px; color: #3a5060; font-family: monospace; line-height: 1.6; }
+  @media (max-width: 480px) { input[type="number"] { width: 54px; font-size: 16px; padding: 6px; } th, td { padding: 4px 3px; } }
+</style>
+</head>
+<body>
+<div class="eyebrow">Decision Tool</div>
+<div class="mode-tabs">
+  <div class="mode-tab active" onclick="setMode('pareto')">Pareto Ranking</div>
+  <div class="mode-tab" onclick="setMode('average')">Average</div>
+</div>
+<table>
+  <thead><tr><th>Metric</th><th>A</th><th>B</th><th>C</th></tr></thead>
+  <tbody>
+    <tr><td>Quality</td><td><input type="number" min="0" max="100" value="0" id="a0" oninput="update()"></td><td><input type="number" min="0" max="100" value="0" id="b0" oninput="update()"></td><td><input type="number" min="0" max="100" value="0" id="c0" oninput="update()"></td></tr>
+    <tr><td>Cost</td><td><input type="number" min="0" max="100" value="0" id="a1" oninput="update()"></td><td><input type="number" min="0" max="100" value="0" id="b1" oninput="update()"></td><td><input type="number" min="0" max="100" value="0" id="c1" oninput="update()"></td></tr>
+    <tr><td>Timeline</td><td><input type="number" min="0" max="100" value="0" id="a2" oninput="update()"></td><td><input type="number" min="0" max="100" value="0" id="b2" oninput="update()"></td><td><input type="number" min="0" max="100" value="0" id="c2" oninput="update()"></td></tr>
+    <tr><td>Experience</td><td><input type="number" min="0" max="100" value="0" id="a3" oninput="update()"></td><td><input type="number" min="0" max="100" value="0" id="b3" oninput="update()"></td><td><input type="number" min="0" max="100" value="0" id="c3" oninput="update()"></td></tr>
+    <tr><td style="color: #4a6070;">Average</td><td class="avg-cell" id="avgA">0</td><td class="avg-cell" id="avgB">0</td><td class="avg-cell" id="avgC">0</td></tr>
+  </tbody>
+</table>
+<div class="results">
+  <div class="results-title" id="results-label">Pareto Rankings</div>
+  <div id="rankings"></div>
+</div>
+<div class="note" id="note-text">Pareto Optimal = not dominated by any other candidate. Candidates in the same tier are non-dominated relative to each other.</div>
+<script>
+let mode = 'pareto';
+const METRICS = 4;
+const CANDIDATES = ['A', 'B', 'C'];
+function setMode(m) { mode = m; document.querySelectorAll('.mode-tab').forEach((tab, i) => { tab.classList.toggle('active', (i === 0 && m === 'pareto') || (i === 1 && m === 'average')); }); document.getElementById('results-label').textContent = m === 'pareto' ? 'Pareto Rankings' : 'Average Rankings'; document.getElementById('note-text').textContent = m === 'pareto' ? 'Pareto Optimal = not dominated by any other candidate. Candidates in the same tier are non-dominated relative to each other.' : 'Candidates ranked by simple average of all four metric scores. No weighting applied.'; update(); }
+function getScores(c) { const prefix = c.toLowerCase(); return Array.from({ length: METRICS }, (_, i) => { const v = parseInt(document.getElementById(prefix + i).value) || 0; return Math.min(100, Math.max(0, v)); }); }
+function avg(scores) { return scores.reduce((a, b) => a + b, 0) / scores.length; }
+function paretoRank(data) { let remaining = [...CANDIDATES]; const tiers = []; while (remaining.length > 0) { const tier = remaining.filter(n => remaining.every(m => { if (m === n) return true; const a = data[m], b = data[n]; const allGeq = a.every((v, i) => v >= b[i]); const anyGt = a.some((v, i) => v > b[i]); return !(allGeq && anyGt); })); tiers.push(tier); remaining = remaining.filter(n => !tier.includes(n)); } return tiers; }
+function update() { const data = {}; CANDIDATES.forEach(c => { data[c] = getScores(c); }); CANDIDATES.forEach(c => { document.getElementById('avg' + c).textContent = avg(data[c]).toFixed(1); }); const el = document.getElementById('rankings'); if (mode === 'pareto') { const tiers = paretoRank(data); const tierClasses = ['tier-pareto', 'tier-2', 'tier-3']; const tierLabels = ['Pareto Optimal', 'Tier 2', 'Tier 3']; let html = ''; tiers.forEach((tier, ti) => { tier.forEach(c => { const a = avg(data[c]).toFixed(1); html += '<div class="rank-row ' + (tierClasses[ti] || 'tier-3') + '"><div class="rank-badge">' + c + '</div><div class="rank-name">Candidate ' + c + '</div><div class="rank-detail">' + (tierLabels[ti] || 'Tier ' + (ti+1)) + ' \u00b7 avg ' + a + '</div></div>'; }); }); el.innerHTML = html; } else { const ranked = CANDIDATES.map(c => ({ c, a: avg(data[c]) })).sort((a, b) => b.a - a.a); const tierClasses = ['tier-pareto', 'tier-2', 'tier-3']; let html = ''; ranked.forEach((r, i) => { html += '<div class="rank-row ' + (tierClasses[i] || 'tier-3') + '"><div class="rank-badge">' + (i + 1) + '</div><div class="rank-name">Candidate ' + r.c + '</div><div class="rank-detail">avg ' + r.a.toFixed(1) + '</div></div>'; }); el.innerHTML = html; } }
+update();
+</script>
+</body>
+</html>
