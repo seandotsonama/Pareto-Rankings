@@ -6,73 +6,648 @@
 <title>Candidate Ranking</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { min-height: 100vh; background: #080e17; font-family: sans-serif; padding: 20px 16px; color: #c8d8e8; }
+  body { min-height: 100vh; background: #080e17; font-family: sans-serif; padding: 20px 16px; color: #ffffff; }
   .eyebrow { font-size: 10px; letter-spacing: 0.15em; color: #e07b39; text-transform: uppercase; font-family: monospace; margin-bottom: 10px; }
+
   .mode-tabs { display: flex; gap: 12px; margin-bottom: 24px; }
-  .mode-tab { padding: 8px 18px; border-radius: 6px; font-size: 13px; font-weight: 600; font-family: monospace; cursor: pointer; border: 1px solid #1a2b3c; background: #0d1825; color: #4a6070; letter-spacing: 0.05em; transition: all 0.15s; }
+  .mode-tab { padding: 8px 18px; border-radius: 6px; font-size: 13px; font-weight: 600; font-family: monospace; cursor: pointer; border: 1px solid #2a3f55; background: #0d1825; color: #ffffff; letter-spacing: 0.05em; transition: all 0.15s; }
   .mode-tab.active { background: #e07b39; border-color: #e07b39; color: #fff; }
-  table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
-  th { font-size: 11px; letter-spacing: 0.1em; color: #4a6070; text-transform: uppercase; font-family: monospace; padding: 8px 6px; text-align: center; border-bottom: 1px solid #1a2b3c; }
-  th:first-child { text-align: left; }
-  td { padding: 6px; text-align: center; border-bottom: 1px solid #111c2a; }
-  td:first-child { text-align: left; font-family: monospace; font-size: 14px; font-weight: 600; color: #c8d8e8; }
-  input[type="number"] { width: 64px; padding: 8px; background: #111c2a; border: 1px solid #1e2f42; border-radius: 4px; color: #c8d8e8; font-size: 18px; font-family: monospace; font-weight: 500; outline: none; text-align: center; transition: all 0.15s; -moz-appearance: textfield; }
-  input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-  input[type="number"]:focus { border-color: #e07b39; color: #e07b39; background: #1a2535; }
-  .avg-cell { font-family: monospace; font-size: 16px; font-weight: 600; color: #8a9bb0; }
-  .results { background: #0d1825; border: 1px solid #1a2b3c; border-radius: 8px; padding: 16px; }
-  .results-title { font-size: 11px; letter-spacing: 0.1em; color: #4a6070; text-transform: uppercase; font-family: monospace; margin-bottom: 12px; }
-  .rank-row { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 6px; margin-bottom: 6px; }
-  .rank-badge { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: monospace; font-size: 14px; font-weight: 700; }
-  .rank-name { flex: 1; font-family: monospace; font-size: 15px; font-weight: 600; }
-  .rank-detail { font-family: monospace; font-size: 12px; }
-  .tier-pareto { background: rgba(224,123,57,0.08); }
-  .tier-pareto .rank-badge { background: #e07b39; color: #fff; }
-  .tier-pareto .rank-name { color: #e07b39; }
-  .tier-pareto .rank-detail { color: #e07b39; }
-  .tier-2 { background: rgba(138,155,176,0.06); }
-  .tier-2 .rank-badge { background: #2a3d52; color: #8a9bb0; }
-  .tier-2 .rank-name { color: #8a9bb0; }
-  .tier-2 .rank-detail { color: #4a6070; }
-  .tier-3 { background: rgba(74,96,112,0.06); }
-  .tier-3 .rank-badge { background: #1a2b3c; color: #4a6070; }
-  .tier-3 .rank-name { color: #4a6070; }
-  .tier-3 .rank-detail { color: #3a5060; }
-  .note { margin-top: 16px; padding: 12px 14px; background: #080e17; border-radius: 4px; font-size: 12px; color: #3a5060; font-family: monospace; line-height: 1.6; }
-  @media (max-width: 480px) { input[type="number"] { width: 54px; font-size: 16px; padding: 6px; } th, td { padding: 4px 3px; } }
+
+  table { width: 100%; border-collapse: collapse; }
+  th, td { padding: 12px 10px; text-align: center; border-bottom: 1px solid #1a2b3c; }
+  th { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; font-family: monospace; color: #ffffff; background: #0d1825; }
+  th.candidate { font-size: 16px; color: #e07b39; letter-spacing: 0.04em; padding: 0; }
+  .hdr-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 36px; border-radius: 6px;
+    font-size: 16px; font-weight: 700; font-family: monospace;
+    color: #e07b39; background: transparent;
+    transition: background 0.2s, color 0.2s, border 0.2s;
+  }
+  td.metric-label { text-align: left; font-size: 12px; letter-spacing: 0.06em; color: #ffffff; text-transform: uppercase; font-family: monospace; background: #0d1825; white-space: nowrap; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #0a1520; }
+  tr:hover td.metric-label { background: #0d1825; }
+  td.avg-row { font-family: monospace; font-size: 18px; font-weight: 600; color: #ffffff; background: #0a1520; }
+  td.avg-label { font-size: 12px; letter-spacing: 0.06em; color: #e07b39; text-transform: uppercase; font-family: monospace; background: #0a1520; white-space: nowrap; text-align: left; }
+
+  input[type=number] {
+    width: 68px; padding: 8px; background: #111c2a;
+    border: 1px solid #2a3f55; border-radius: 4px;
+    color: #ffffff; font-size: 18px; font-family: monospace;
+    font-weight: 500; text-align: center; outline: none;
+    -moz-appearance: textfield;
+  }
+  input[type=number]:focus { border-color: #e07b39; color: #e07b39; background: #1a2535; }
+  input[type=number]::-webkit-inner-spin-button,
+  input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+  .card { background: #0d1825; border: 1px solid #1a2b3c; border-radius: 8px; padding: 20px; margin-bottom: 20px; overflow-x: auto; }
+
+  .section-label { font-size: 10px; letter-spacing: 0.12em; color: #ffffff; text-transform: uppercase; font-family: monospace; margin-bottom: 16px; }
+  .result { padding: 12px 14px; background: #0a1520; border-radius: 6px; margin-bottom: 10px; border: 1px solid transparent; border-left-width: 3px; }
+  .result-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .result-name { font-family: monospace; font-size: 16px; font-weight: 600; }
+  .result-tier { font-size: 11px; font-family: monospace; font-weight: 600; }
+  .result-scores { display: flex; gap: 12px; flex-wrap: wrap; }
+  .result-scores span { font-size: 12px; color: #ffffff; font-family: monospace; }
+  .result-scores span b { color: #ffffff; font-weight: 700; }
+  .note { margin-top: 12px; padding: 12px 14px; background: #080e17; border-radius: 4px; font-size: 12px; color: #ffffff; font-family: monospace; line-height: 1.6; }
+
+  .radar-card { background: #0d1825; border: 1px solid #1a2b3c; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+  .radar-title { font-size: 10px; letter-spacing: 0.12em; color: #ffffff; text-transform: uppercase; font-family: monospace; margin-bottom: 16px; }
+  .radar-legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 14px; justify-content: center; }
+  .radar-legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; font-family: monospace; color: #ffffff; }
+  .radar-legend-dot { width: 12px; height: 12px; border-radius: 2px; }
+
+  .explainer { background: #0d1825; border: 1px solid #1a2b3c; border-radius: 8px; padding: 20px; margin-top: 4px; }
+  .explainer-title { font-size: 10px; letter-spacing: 0.12em; color: #e07b39; text-transform: uppercase; font-family: monospace; margin-bottom: 16px; }
+  .explainer p { font-size: 13px; color: #ffffff; line-height: 1.8; margin-bottom: 14px; }
+  .explainer p:last-child { margin-bottom: 0; }
+  .explainer strong { color: #e07b39; font-weight: 600; }
+  .explainer .example { margin-top: 14px; padding: 12px 14px; background: #080e17; border-left: 3px solid #e07b39; border-radius: 4px; font-size: 12px; color: #ffffff; font-family: monospace; line-height: 1.8; }
+  .radar-modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.75); z-index: 1000;
+    align-items: center; justify-content: center;
+  }
+  .radar-modal-overlay.open { display: flex; }
+  .radar-modal {
+    background: #0d1825; border: 1px solid #1a2b3c; border-radius: 12px;
+    padding: 24px; width: 75vw; max-width: 75vw;
+    position: relative;
+  }
+  .radar-modal-close {
+    position: absolute; top: 12px; right: 14px;
+    background: none; border: none; color: #ffffff;
+    font-size: 20px; cursor: pointer; font-family: monospace;
+    line-height: 1;
+  }
+  .radar-modal-close:hover { color: #e07b39; }
+  .radar-modal-title { font-size: 10px; letter-spacing: 0.12em; color: #ffffff; text-transform: uppercase; font-family: monospace; margin-bottom: 16px; }
+  #radar-canvas { cursor: pointer; }
 </style>
 </head>
 <body>
-<div class="eyebrow">Decision Tool</div>
-<div class="mode-tabs">
-  <div class="mode-tab active" onclick="setMode('pareto')">Pareto Ranking</div>
-  <div class="mode-tab" onclick="setMode('average')">Average</div>
+
+<div class="eyebrow">Candidate Evaluation</div>
+
+<div class="mode-tabs" style="justify-content:space-between;">
+  <div style="display:flex;gap:12px;">
+    <button class="mode-tab active" onclick="setMode('pareto')">Pareto Ranking</button>
+    <button class="mode-tab" onclick="setMode('average')">Average</button>
+  </div>
+  <button class="mode-tab" style="background:#1565c0;border-color:#1565c0;color:#fff;" onclick="randomizeScores()">Randomize</button>
 </div>
-<table>
-  <thead><tr><th>Metric</th><th>A</th><th>B</th><th>C</th></tr></thead>
-  <tbody>
-    <tr><td>Quality</td><td><input type="number" min="0" max="100" value="0" id="a0" oninput="update()"></td><td><input type="number" min="0" max="100" value="0" id="b0" oninput="update()"></td><td><input type="number" min="0" max="100" value="0" id="c0" oninput="update()"></td></tr>
-    <tr><td>Cost</td><td><input type="number" min="0" max="100" value="0" id="a1" oninput="update()"></td><td><input type="number" min="0" max="100" value="0" id="b1" oninput="update()"></td><td><input type="number" min="0" max="100" value="0" id="c1" oninput="update()"></td></tr>
-    <tr><td>Timeline</td><td><input type="number" min="0" max="100" value="0" id="a2" oninput="update()"></td><td><input type="number" min="0" max="100" value="0" id="b2" oninput="update()"></td><td><input type="number" min="0" max="100" value="0" id="c2" oninput="update()"></td></tr>
-    <tr><td>Experience</td><td><input type="number" min="0" max="100" value="0" id="a3" oninput="update()"></td><td><input type="number" min="0" max="100" value="0" id="b3" oninput="update()"></td><td><input type="number" min="0" max="100" value="0" id="c3" oninput="update()"></td></tr>
-    <tr><td style="color: #4a6070;">Average</td><td class="avg-cell" id="avgA">0</td><td class="avg-cell" id="avgB">0</td><td class="avg-cell" id="avgC">0</td></tr>
-  </tbody>
-</table>
-<div class="results">
-  <div class="results-title" id="results-label">Pareto Rankings</div>
-  <div id="rankings"></div>
+
+<div class="card">
+  <table>
+    <thead>
+      <tr>
+        <th></th>
+        <th class="candidate"><div style="position:relative;height:80px;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;"><span class="hdr-badge" id="hdr-A" style="position:absolute;top:8px;">A</span><span id="tier-label-A" style="position:absolute;top:54px;font-size:12px;font-family:monospace;letter-spacing:0.04em;font-weight:600;white-space:nowrap;">&nbsp;</span></div></th>
+        <th class="candidate"><div style="position:relative;height:80px;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;"><span class="hdr-badge" id="hdr-B" style="position:absolute;top:8px;">B</span><span id="tier-label-B" style="position:absolute;top:54px;font-size:12px;font-family:monospace;letter-spacing:0.04em;font-weight:600;white-space:nowrap;">&nbsp;</span></div></th>
+        <th class="candidate"><div style="position:relative;height:80px;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;"><span class="hdr-badge" id="hdr-C" style="position:absolute;top:8px;">C</span><span id="tier-label-C" style="position:absolute;top:54px;font-size:12px;font-family:monospace;letter-spacing:0.04em;font-weight:600;white-space:nowrap;">&nbsp;</span></div></th>
+        <th class="candidate"><div style="position:relative;height:80px;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;"><span class="hdr-badge" id="hdr-D" style="position:absolute;top:8px;">D</span><span id="tier-label-D" style="position:absolute;top:54px;font-size:12px;font-family:monospace;letter-spacing:0.04em;font-weight:600;white-space:nowrap;">&nbsp;</span></div></th>
+        <th class="candidate"><div style="position:relative;height:80px;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;"><span class="hdr-badge" id="hdr-E" style="position:absolute;top:8px;">E</span><span id="tier-label-E" style="position:absolute;top:54px;font-size:12px;font-family:monospace;letter-spacing:0.04em;font-weight:600;white-space:nowrap;">&nbsp;</span></div></th>
+      </tr>
+    </thead>
+    <tbody id="score-table"></tbody>
+  </table>
+  <div style="display:flex;gap:20px;justify-content:center;padding-top:14px;flex-wrap:wrap;">
+    <div style="display:flex;align-items:center;gap:8px;font-size:11px;font-family:monospace;color:#ffffff;">
+      <div style="width:32px;height:22px;border-radius:4px;background:rgba(60,160,80,0.35);border:1px solid #2a3f55;"></div>
+      Highest score for that trait
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;font-size:11px;font-family:monospace;color:#ffffff;">
+      <div style="width:32px;height:22px;border-radius:4px;background:rgba(200,50,50,0.30);border:1px solid #2a3f55;"></div>
+      Lowest score for that trait
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;font-size:11px;font-family:monospace;color:#ffffff;">
+      <div style="width:32px;height:22px;border-radius:4px;background:rgba(220,190,40,0.35);border:1px solid #2a3f55;"></div>
+      Tie for highest or lowest
+    </div>
+  </div>
 </div>
-<div class="note" id="note-text">Pareto Optimal = not dominated by any other candidate. Candidates in the same tier are non-dominated relative to each other.</div>
+
+<div class="radar-card">
+  <div class="radar-title">Radar Chart &mdash; Click to Expand</div>
+  <canvas id="radar-canvas" width="340" height="300" style="display:block;margin:0 auto;"></canvas>
+  <div class="radar-legend" id="radar-legend"></div>
+</div>
+
+<div class="card">
+  <div class="section-label">Ranking Result</div>
+  <div id="results"></div>
+  <div class="note" id="result-note">Pareto Optimal = not dominated by any other candidate. Candidates in the same tier are mutually non-dominating.</div>
+</div>
+
+<div class="explainer" id="explainer-block">
+  <div class="explainer-title">What is Pareto Ranking?</div>
+  <p>This ranking uses a <strong>thresholded dominance model</strong> rather than simple averaging. It identifies which candidates are meaningfully stronger across categories without inventing weights or assuming equal importance.</p>
+  <p>For each category, the standard deviation across all candidate scores is computed. The <strong>dominance threshold</strong> for that category is set at 0.5 × stddev. Differences smaller than this threshold are treated as neutral — not wins or losses. This prevents noise and minor score gaps from driving the ranking.</p>
+  <p><strong>Candidate A strongly dominates Candidate B</strong> if A has at least one category win against B, zero category losses, and more wins than losses. A candidate in <strong>Tier 1</strong> has no strong losses and the highest net dominance score. Tier 2 candidates have mixed profiles. Tier 3 candidates are more often dominated than dominant.</p>
+  <p>This is not a weighted average model. It does not assume equal importance across categories. Small differences inside the threshold band are explicitly ignored.</p>
+  <div class="example">
+    Example: A scores [90, 80, 70, 85, 88, 76] and B scores [88, 79, 68, 84, 85, 74].<br>
+    A is higher on every metric → A dominates B → B drops to Tier 2.<br><br>
+    But if B scores [95, 79, 68, 84, 85, 74], B beats A on Charisma.<br>
+    Neither fully dominates the other → both land in Tier 1.
+  </div>
+</div>
+
 <script>
-let mode = 'pareto';
-const METRICS = 4;
-const CANDIDATES = ['A', 'B', 'C'];
-function setMode(m) { mode = m; document.querySelectorAll('.mode-tab').forEach((tab, i) => { tab.classList.toggle('active', (i === 0 && m === 'pareto') || (i === 1 && m === 'average')); }); document.getElementById('results-label').textContent = m === 'pareto' ? 'Pareto Rankings' : 'Average Rankings'; document.getElementById('note-text').textContent = m === 'pareto' ? 'Pareto Optimal = not dominated by any other candidate. Candidates in the same tier are non-dominated relative to each other.' : 'Candidates ranked by simple average of all four metric scores. No weighting applied.'; update(); }
-function getScores(c) { const prefix = c.toLowerCase(); return Array.from({ length: METRICS }, (_, i) => { const v = parseInt(document.getElementById(prefix + i).value) || 0; return Math.min(100, Math.max(0, v)); }); }
-function avg(scores) { return scores.reduce((a, b) => a + b, 0) / scores.length; }
-function paretoRank(data) { let remaining = [...CANDIDATES]; const tiers = []; while (remaining.length > 0) { const tier = remaining.filter(n => remaining.every(m => { if (m === n) return true; const a = data[m], b = data[n]; const allGeq = a.every((v, i) => v >= b[i]); const anyGt = a.some((v, i) => v > b[i]); return !(allGeq && anyGt); })); tiers.push(tier); remaining = remaining.filter(n => !tier.includes(n)); } return tiers; }
-function update() { const data = {}; CANDIDATES.forEach(c => { data[c] = getScores(c); }); CANDIDATES.forEach(c => { document.getElementById('avg' + c).textContent = avg(data[c]).toFixed(1); }); const el = document.getElementById('rankings'); if (mode === 'pareto') { const tiers = paretoRank(data); const tierClasses = ['tier-pareto', 'tier-2', 'tier-3']; const tierLabels = ['Pareto Optimal', 'Tier 2', 'Tier 3']; let html = ''; tiers.forEach((tier, ti) => { tier.forEach(c => { const a = avg(data[c]).toFixed(1); html += '<div class="rank-row ' + (tierClasses[ti] || 'tier-3') + '"><div class="rank-badge">' + c + '</div><div class="rank-name">Candidate ' + c + '</div><div class="rank-detail">' + (tierLabels[ti] || 'Tier ' + (ti+1)) + ' \u00b7 avg ' + a + '</div></div>'; }); }); el.innerHTML = html; } else { const ranked = CANDIDATES.map(c => ({ c, a: avg(data[c]) })).sort((a, b) => b.a - a.a); const tierClasses = ['tier-pareto', 'tier-2', 'tier-3']; let html = ''; ranked.forEach((r, i) => { html += '<div class="rank-row ' + (tierClasses[i] || 'tier-3') + '"><div class="rank-badge">' + (i + 1) + '</div><div class="rank-name">Candidate ' + r.c + '</div><div class="rank-detail">avg ' + r.a.toFixed(1) + '</div></div>'; }); el.innerHTML = html; } }
-update();
+const METRICS = ["Charisma", "Adaptability", "Confidence", "Creativity", "Adventurousness", "Excitement"];
+const AVG_COLORS = ["#2e7d32", "#8bc34a", "#ffeb3b", "#e07b39", "#f44336"];
+// Pareto tier outline colors
+const PARETO_BORDERS = ["#e07b39", "#5b9bd5", "#aaaaaa"];
+// Per-candidate unique colors for radar chart
+const CANDIDATE_COLORS = ["#2e7d32", "#8bc34a", "#ffeb3b", "#e07b39", "#f44336"];
+const TIER_LABELS = ["Pareto Optimal", "Tier 2", "Tier 3"];
+const CANDIDATES = ["A", "B", "C", "D", "E"];
+
+let mode = "pareto";
+// Store per-candidate tier index for badge coloring
+let candidateTierMap = {};
+
+function randBiased() {
+  return Math.min(100, Math.max(0, Math.round(75 + (Math.random() - 0.5) * 40)));
+}
+function randScores() {
+  return Object.fromEntries(METRICS.map(m => [m, randBiased()]));
+}
+
+const scores = { A: randScores(), B: randScores(), C: randScores(), D: randScores(), E: randScores() };
+
+function setMode(m) {
+  mode = m;
+  document.querySelectorAll(".mode-tab").forEach((el, i) => {
+    el.classList.toggle("active", ["pareto","average"][i] === m);
+  });
+  document.getElementById("result-note").textContent = m === "pareto"
+    ? "Pareto Optimal = not dominated by any other candidate. Candidates in the same tier are mutually non-dominating."
+    : "Candidates ranked by simple average of all six metric scores.";
+  document.getElementById("explainer-block").style.display = m === "pareto" ? "block" : "none";
+  buildTable();
+  renderResults();
+}
+
+function avg(candidate) {
+  return METRICS.reduce((sum, m) => sum + scores[candidate][m], 0) / METRICS.length;
+}
+
+function shadeTableCells() {
+  METRICS.forEach(m => {
+    const vals = CANDIDATES.map(c => scores[c][m]);
+    const maxVal = Math.max(...vals);
+    const minVal = Math.min(...vals);
+    CANDIDATES.forEach(c => {
+      const cell = document.getElementById("cell-" + c + "-" + m);
+      if (!cell) return;
+      const input = cell ? cell.querySelector("input") : null;
+      if (!input) return;
+      const maxCount = vals.filter(v => v === maxVal).length;
+      const minCount = vals.filter(v => v === minVal).length;
+      if (maxVal === minVal) {
+        // all tied — no shading
+        input.style.background = "#111c2a";
+      } else if (scores[c][m] === maxVal && maxCount > 1) {
+        // tied for highest
+        input.style.background = "rgba(220,190,40,0.35)";
+      } else if (scores[c][m] === minVal && minCount > 1) {
+        // tied for lowest
+        input.style.background = "rgba(220,190,40,0.35)";
+      } else if (scores[c][m] === maxVal) {
+        input.style.background = "rgba(60,160,80,0.35)";
+      } else if (scores[c][m] === minVal) {
+        input.style.background = "rgba(200,50,50,0.30)";
+      } else {
+        input.style.background = "#111c2a";
+      }
+    });
+  });
+}
+
+function buildTable() {
+  const tbody = document.getElementById("score-table");
+  tbody.innerHTML = "";
+  METRICS.forEach(m => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td class="metric-label">${m}</td>` +
+      CANDIDATES.map(c => `
+        <td id="cell-${c}-${m}"><input type="number" min="0" max="100" value="${scores[c][m]}"
+          oninput="updateScore('${c}','${m}',this.value)"
+          onfocus="this.select()" /></td>
+      `).join("");
+    tbody.appendChild(tr);
+  });
+  const avgTr = document.createElement("tr");
+  avgTr.innerHTML = `<td class="avg-label">Average</td>` +
+    CANDIDATES.map(c => `<td class="avg-row" id="avg-${c}">${avg(c).toFixed(1)}</td>`).join("");
+  tbody.appendChild(avgTr);
+  shadeTableCells();
+}
+
+function updateScore(candidate, metric, val) {
+  const parsed = parseInt(val);
+  if (isNaN(parsed)) return;
+  scores[candidate][metric] = Math.min(100, Math.max(0, parsed));
+  CANDIDATES.forEach(c => {
+    const el = document.getElementById("avg-" + c);
+    if (el) el.textContent = avg(c).toFixed(1);
+  });
+  shadeTableCells();
+  renderResults();
+}
+
+// Thresholded dominance helpers
+function stddev(metric) {
+  const vals = CANDIDATES.map(c => scores[c][metric]);
+  const mean = vals.reduce((s, v) => s + v, 0) / vals.length;
+  const variance = vals.reduce((s, v) => s + Math.pow(v - mean, 2), 0) / vals.length;
+  return Math.sqrt(variance);
+}
+
+function threshold(metric) {
+  return 0.5 * stddev(metric);
+}
+
+// Returns {wins, losses, neutrals} for ca vs cb
+function pairResult(ca, cb) {
+  let wins = 0, losses = 0, neutrals = 0;
+  METRICS.forEach(k => {
+    const t = threshold(k);
+    const diff = scores[ca][k] - scores[cb][k];
+    if (diff >= t && t > 0) wins++;
+    else if (diff <= -t && t > 0) losses++;
+    else if (t === 0) { /* zero variance — neutral */ neutrals++; }
+    else neutrals++;
+  });
+  return { wins, losses, neutrals };
+}
+
+// Standard dominance: wins > losses, losses == 0, wins >= 1
+function dominates(ca, cb) {
+  const { wins, losses } = pairResult(ca, cb);
+  return wins >= 1 && losses === 0 && wins > losses;
+}
+
+// Per-candidate summary stats
+function candidateStats() {
+  const stats = {};
+  CANDIDATES.forEach(c => {
+    stats[c] = { strongWins: 0, strongLosses: 0, catWins: 0, catLosses: 0 };
+  });
+  CANDIDATES.forEach(ca => {
+    CANDIDATES.forEach(cb => {
+      if (ca === cb) return;
+      const { wins, losses } = pairResult(ca, cb);
+      stats[ca].catWins += wins;
+      stats[ca].catLosses += losses;
+      if (dominates(ca, cb)) stats[ca].strongWins++;
+      if (dominates(cb, ca)) stats[ca].strongLosses++;
+    });
+  });
+  CANDIDATES.forEach(c => {
+    stats[c].netDominance = stats[c].strongWins - stats[c].strongLosses;
+    stats[c].catNet = stats[c].catWins - stats[c].catLosses;
+  });
+  return stats;
+}
+
+function paretoRank() {
+  const stats = candidateStats();
+
+  // Tier 1: strongLosses === 0 AND netDominance is among the highest group
+  const maxNet = Math.max(...CANDIDATES.map(c => stats[c].netDominance));
+  const tier1 = CANDIDATES.filter(c => stats[c].strongLosses === 0 && stats[c].netDominance === maxNet);
+
+  // Tier 3: strongLosses materially exceed strongWins (netDominance < 0)
+  const tier3 = CANDIDATES.filter(c => !tier1.includes(c) && stats[c].netDominance < 0);
+
+  // Tier 2: everything else
+  const tier2 = CANDIDATES.filter(c => !tier1.includes(c) && !tier3.includes(c));
+
+  function sortTier(arr) {
+    return arr.sort((a, b) => {
+      if (stats[b].netDominance !== stats[a].netDominance) return stats[b].netDominance - stats[a].netDominance;
+      if (stats[b].strongWins !== stats[a].strongWins) return stats[b].strongWins - stats[a].strongWins;
+      if (stats[b].catNet !== stats[a].catNet) return stats[b].catNet - stats[a].catNet;
+      if (stats[a].strongLosses !== stats[b].strongLosses) return stats[a].strongLosses - stats[b].strongLosses;
+      return a.localeCompare(b);
+    });
+  }
+
+  const tiers = [];
+  if (tier1.length) tiers.push(sortTier(tier1));
+  if (tier2.length) tiers.push(sortTier(tier2));
+  if (tier3.length) tiers.push(sortTier(tier3));
+  return tiers;
+}
+
+function averageRank() {
+  const sorted = [...CANDIDATES].sort((a, b) => avg(b) - avg(a));
+  const tiers = [];
+  let i = 0;
+  while (i < sorted.length) {
+    const tier = [sorted[i]];
+    while (i + 1 < sorted.length && avg(sorted[i+1]) === avg(sorted[i])) {
+      i++;
+      tier.push(sorted[i]);
+    }
+    tiers.push(tier);
+    i++;
+  }
+  return tiers;
+}
+
+function getDominanceNote(c, ti) {
+  if (mode === "average") {
+    if (ti === 0) {
+      const beaten = CANDIDATES.filter(o => o !== c && avg(c) > avg(o));
+      return beaten.length
+        ? "Highest average. Outscores " + beaten.map(x => "Candidate " + x).join(" and ") + "."
+        : "Tied for highest average score.";
+    } else {
+      const beaters = CANDIDATES.filter(o => o !== c && avg(o) > avg(c));
+      return "Average of " + avg(c).toFixed(1) + " is lower than " + beaters.map(x => "Candidate " + x).join(" and ") + ".";
+    }
+  }
+  // Use thresholded pairwise results for note
+  const stats = candidateStats();
+  const s = stats[c];
+  const dominatedBy = CANDIDATES.filter(o => o !== c && dominates(o, c));
+  const dominatesOver = CANDIDATES.filter(o => o !== c && dominates(c, o));
+
+  if (ti === 0) {
+    const parts = [];
+    if (dominatesOver.length) parts.push("Strongly beats " + dominatesOver.map(x => "Candidate " + x).join(", ") + ".");
+    const neutralWith = CANDIDATES.filter(o => o !== c && !dominates(c, o) && !dominates(o, c));
+    if (neutralWith.length) parts.push("No decisive edge over " + neutralWith.map(x => "Candidate " + x).join(", ") + ".");
+    parts.push("Net dominance: " + s.netDominance + ". Category wins: " + s.catWins + ", losses: " + s.catLosses + ".");
+    return parts.join(" ");
+  } else {
+    const parts = [];
+    if (dominatedBy.length) parts.push("Strongly dominated by " + dominatedBy.map(x => "Candidate " + x).join(", ") + ".");
+    if (dominatesOver.length) parts.push("Beats " + dominatesOver.map(x => "Candidate " + x).join(", ") + ".");
+    parts.push("Net dominance: " + s.netDominance + ". Category wins: " + s.catWins + ", losses: " + s.catLosses + ".");
+    return parts.join(" ");
+  }
+}
+
+function renderResults() {
+  const tiers = mode === "pareto" ? paretoRank() : averageRank();
+
+  // Build candidateTierMap
+  candidateTierMap = {};
+  tiers.forEach((tier, ti) => tier.forEach(c => { candidateTierMap[c] = ti; }));
+
+  const container = document.getElementById("results");
+  container.innerHTML = "";
+  tiers.forEach((tier, ti) => {
+    tier.forEach(c => {
+      const ci = CANDIDATES.indexOf(c);
+      const avgRank = avgRankOf(c);
+      const displayColor = AVG_COLORS[avgRank] || AVG_COLORS[AVG_COLORS.length - 1];
+      const borderColor = mode === "pareto" ? (PARETO_BORDERS[ti] || "#aaaaaa") : displayColor;
+      const label = mode === "pareto"
+        ? (TIER_LABELS[ti] || "Tier " + (ti + 1))
+        : ["1st", "2nd", "3rd", "4th", "5th"][ti] || (ti + 1) + "th";
+      const s = scores[c];
+      const note = getDominanceNote(c, ti);
+      const div = document.createElement("div");
+      div.className = "result";
+      div.style.borderColor = borderColor;
+      div.style.borderLeftColor = borderColor;
+      div.style.borderLeftWidth = "3px";
+      div.innerHTML = `
+        <div class="result-header">
+          <span class="result-name" style="color:${displayColor}">Candidate ${c}</span>
+          <span class="result-tier" style="color:${borderColor}">${label}</span>
+        </div>
+        <div class="result-scores">
+          ${METRICS.map(m => `<span>${m}: <b>${s[m]}</b></span>`).join("")}
+          <span>Avg: <b>${avg(c).toFixed(1)}</b></span>
+        </div>
+        <div style="margin-top:8px;font-size:12px;color:#ffffff;font-family:monospace;line-height:1.6;opacity:0.85;">${note}</div>
+      `;
+      container.appendChild(div);
+    });
+  });
+
+  colorHeaders(tiers);
+  drawRadar();
+}
+
+function avgRankOf(c) {
+  // Always rank by average score regardless of current mode
+  const sorted = [...CANDIDATES].sort((a, b) => avg(b) - avg(a));
+  return sorted.indexOf(c);
+}
+
+function colorHeaders(tiers) {
+  const paretoRanked = [];
+  tiers.forEach(tier => tier.forEach(c => paretoRanked.push(c)));
+
+  CANDIDATES.forEach(c => {
+    const el = document.getElementById("hdr-" + c);
+    const tierEl = document.getElementById("tier-label-" + c);
+    if (!el) return;
+    // Always use average rank for fill color
+    const rank = avgRankOf(c);
+    const fillColor = AVG_COLORS[rank] || AVG_COLORS[AVG_COLORS.length - 1];
+    const ti = candidateTierMap[c] !== undefined ? candidateTierMap[c] : 0;
+    el.style.background = fillColor;
+    el.style.color = "#000000";
+    el.style.border = "none";
+    if (tierEl) {
+      if (mode === "pareto") {
+        const borderColor = PARETO_BORDERS[ti] || "#aaaaaa";
+        tierEl.textContent = TIER_LABELS[ti] || ("Tier " + (ti + 1));
+        tierEl.style.color = borderColor;
+      } else {
+        const ordinals = ["1st","2nd","3rd","4th","5th"];
+        tierEl.textContent = ordinals[rank] || (rank + 1) + "th";
+        tierEl.style.color = "#ffffff";
+      }
+    }
+  });
+}
+
+function drawRadar() {
+  drawRadarOnCanvas("radar-canvas", "radar-legend", false);
+}
+
+function drawRadarOnCanvas(canvasId, legendId, isModal) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  if (isModal) {
+    const size = Math.round(window.innerWidth * 0.68);
+    canvas.width = size;
+    canvas.height = Math.round(size * 0.80);
+  }
+  const ctx = canvas.getContext("2d");
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  const n = METRICS.length;
+  const cx = W / 2, cy = H / 2 - 10;
+  const maxR = Math.min(W, H) / 2 - 50;
+  const step = (2 * Math.PI) / n;
+
+  function angleOf(i) { return -Math.PI / 2 + i * step; }
+  // Compute min/max for dynamic scale
+  let allVals = [];
+  CANDIDATES.forEach(c => METRICS.forEach(m => allVals.push(scores[c][m])));
+  const dataMin = Math.floor(Math.min(...allVals) / 10) * 10;
+  const dataMax = 100;
+  const scaleRange = dataMax - dataMin;
+
+  function point(val, i) {
+    const r = ((val - dataMin) / scaleRange) * maxR;
+    return [cx + r * Math.cos(angleOf(i)), cy + r * Math.sin(angleOf(i))];
+  }
+
+  // Draw spiderweb grid rings
+  const ringValues = [];
+  for (let v = dataMin; v <= dataMax; v += 10) ringValues.push(v);
+  ringValues.forEach(pct => {
+    ctx.beginPath();
+    for (let i = 0; i < n; i++) {
+      const [x, y] = point(pct, i);
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = "rgba(255,255,255,0.18)";
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+    // Ring value labels — bright white
+    if (pct > dataMin) {
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 10px monospace";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(pct, cx + 4, cy - ((pct - dataMin) / scaleRange) * maxR - 4);
+    }
+  });
+
+  // Draw spiderweb spoke axes
+  for (let i = 0; i < n; i++) {
+    const [x, y] = point(dataMax, i);
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(x, y);
+    ctx.strokeStyle = "rgba(255,255,255,0.25)";
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+
+    // Axis labels
+    const lx = cx + (maxR + 26) * Math.cos(angleOf(i));
+    const ly = cy + (maxR + 26) * Math.sin(angleOf(i));
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "10px monospace";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(METRICS[i], lx, ly);
+  }
+
+  // Draw each candidate using rank-based colors matching the table badges
+  const _ranked = [];
+  { const _tiers = mode === "pareto" ? paretoRank() : averageRank(); _tiers.forEach(t => t.forEach(c => _ranked.push(c))); }
+  CANDIDATES.forEach((c, ci) => {
+    const rank = avgRankOf(c);
+    const color = AVG_COLORS[rank] || AVG_COLORS[AVG_COLORS.length - 1];
+    ctx.beginPath();
+    for (let i = 0; i < n; i++) {
+      const val = scores[c][METRICS[i]];
+      const [x, y] = point(val, i);
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.fillStyle = color + "22";
+    ctx.fill();
+
+    for (let i = 0; i < n; i++) {
+      const val = scores[c][METRICS[i]];
+      const [x, y] = point(val, i);
+      ctx.beginPath();
+      ctx.arc(x, y, 3, 0, 2 * Math.PI);
+      ctx.fillStyle = color;
+      ctx.fill();
+    }
+  });
+
+  // Legend
+  const legendEl = document.getElementById(legendId);
+  if (legendEl) {
+    const _ltiers = mode === "pareto" ? paretoRank() : averageRank();
+    const _lranked = [];
+    _ltiers.forEach(tier => tier.forEach(c => _lranked.push(c)));
+    const items = CANDIDATES.map(function(c, ci) {
+      const rank = avgRankOf(c);
+      const fillColor = AVG_COLORS[rank] || AVG_COLORS[AVG_COLORS.length - 1];
+      const ti = candidateTierMap[c] !== undefined ? candidateTierMap[c] : 0;
+      const borderColor = PARETO_BORDERS[ti] || "#aaaaaa";
+      const dotBorder = "none";
+      const ordinals = ["1st","2nd","3rd","4th","5th"];
+      const tierText = mode === "pareto"
+        ? (TIER_LABELS[ti] || "Tier " + (ti+1))
+        : (ordinals[rank] || (rank+1) + "th");
+      const tierColor = mode === "pareto" ? borderColor : fillColor;
+      const tierSpan = '<span style="display:block;font-size:12px;font-weight:600;color:' + tierColor + ';margin-top:4px;">' + tierText + '</span>';
+      return '<div class="radar-legend-item" style="flex-direction:column;align-items:center;gap:2px;">'
+        + '<div style="display:flex;align-items:center;gap:6px;">'
+        + '<div class="radar-legend-dot" style="background:' + fillColor + ';border:' + dotBorder + ';width:14px;height:14px;"></div>'
+        + '<span>Candidate ' + c + '</span>'
+        + '</div>'
+        + tierSpan
+        + '</div>';
+    });
+    legendEl.innerHTML = items.join("");
+  }
+}
+
+document.getElementById("radar-canvas").addEventListener("click", openRadarModal);
+
+function openRadarModal() {
+  const overlay = document.getElementById("radar-modal-overlay");
+  overlay.classList.add("open");
+  drawRadarOnCanvas("radar-canvas-modal", "radar-legend-modal", true);
+}
+
+function closeRadarModal(e) {
+  if (e.target === document.getElementById("radar-modal-overlay")) {
+    document.getElementById("radar-modal-overlay").classList.remove("open");
+  }
+}
+
+function closeRadarModalDirect() {
+  document.getElementById("radar-modal-overlay").classList.remove("open");
+}
+
+function randomizeScores() {
+  CANDIDATES.forEach(c => {
+    METRICS.forEach(m => {
+      scores[c][m] = randBiased();
+    });
+  });
+  buildTable();
+  renderResults();
+}
+
+buildTable();
+renderResults();
 </script>
+<div class="radar-modal-overlay" id="radar-modal-overlay" onclick="closeRadarModal(event)">
+  <div class="radar-modal">
+    <button class="radar-modal-close" onclick="closeRadarModalDirect()">&#x2715;</button>
+    <div class="radar-modal-title">Radar Chart</div>
+    <canvas id="radar-canvas-modal" style="display:block;margin:0 auto;"></canvas>
+    <div class="radar-legend" id="radar-legend-modal" style="margin-top:14px;"></div>
+  </div>
+</div>
 </body>
 </html>
