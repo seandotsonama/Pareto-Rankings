@@ -74,7 +74,7 @@
   .radar-modal-overlay.open { display: flex; }
   .radar-modal {
     background: #0d1825; border: 1px solid #1a2b3c; border-radius: 12px;
-    padding: 24px; width: 75vw; max-width: 75vw;
+    padding: 24px; width: 60vw; max-width: 60vw; max-height: 85vh; overflow-y: auto;
     position: relative;
   }
   .radar-modal-close {
@@ -482,9 +482,9 @@ function drawRadarOnCanvas(canvasId, legendId, isModal) {
   const canvas = document.getElementById(canvasId);
   if (!canvas) return;
   if (isModal) {
-    const size = Math.round(window.innerWidth * 0.68);
+    const size = Math.round(window.innerWidth * 0.52);
     canvas.width = size;
-    canvas.height = Math.round(size * 0.80);
+    canvas.height = Math.round(size * 0.75);
   }
   const ctx = canvas.getContext("2d");
   const W = canvas.width, H = canvas.height;
